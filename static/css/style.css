@@ -1,0 +1,40 @@
+/* Custom UI Aesthetics for Task Manager */
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 15px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn {
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.03);
+    transition: background-color 0.2s ease;
+}
+
+/* Analytics Card Specifics */
+.analytics-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}

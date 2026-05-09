@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, {{ username }}! <span id="connection-status" class="badge bg-secondary ms-2 fs-6 align-middle">Connecting...</span></h2>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">Logout</a>
+    </div>
+
+    <!-- Analytics Row -->
+    <div class="row mb-4 text-center">
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 h-100">
+                <h6 class="text-muted">Total Tasks</h6>
+                <div class="analytics-value" id="totalTasks">0</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 h-100">
+                <h6 class="text-muted">Completed</h6>
+                <div class="analytics-value text-success" id="completedTasks">0</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 h-100">
+                <h6 class="text-muted">Pending</h6>
+                <div class="analytics-value text-warning" id="pendingTasks">0</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card p-3 h-100">
+                <h6 class="text-muted">Completion %</h6>
+                <div class="analytics-value text-primary" id="completionPercentage">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Add Task Form -->
+        <div class="col-md-4 mb-4">
+            <div class="card p-4">
+                <h5 class="mb-3">Add New Task</h5>
+                <form id="addTaskForm">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="taskTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="taskDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" id="taskPriority" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add Task</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Task Table -->
+        <div class="col-md-8">
+            <div class="card p-4">
+                <h5 class="mb-3">Your Tasks</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskListBody">
+                            <!-- Tasks injected dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+
+    // Helper function to prevent XSS attacks
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag)
+        );
+    }
+
+    socket.on('connect', () => {
+        const badge = document.getElementById('connection-status');
+        badge.className = 'badge bg-success ms-2 fs-6 align-middle';
+        badge.innerText = 'Live';
+    });
+
+    socket.on('disconnect', () => {
+        const badge = document.getElementById('connection-status');
+        badge.className = 'badge bg-danger ms-2 fs-6 align-middle';
+        badge.innerText = 'Offline';
+    });
+
+    socket.on('task_updated', () => {
+        console.log("WebSocket: Received task_updated event. Reloading UI...");
+        loadTasks();
+        loadAnalytics();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTasks();
+        loadAnalytics();
+
+        document.getElementById('addTaskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDescription').value;
+            const priority = document.getElementById('taskPriority').value;
+
+            try {
+                const response = await fetch('/api/tasks/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, priority })
+                });
+                if (response.ok) {
+                    document.getElementById('addTaskForm').reset();
+                    document.getElementById('taskPriority').value = 'Medium';
+                    // WebSocket handles UI refresh automatically
+                } else {
+                    const errorData = await response.json();
+                    alert(`Error: ${errorData.error}`);
+                }
+            } catch (error) {
+                console.error("Failed to add task:", error);
+            }
+        });
+    });
+
+    async function loadTasks() {
+        try {
+            const response = await fetch('/api/tasks/');
+            const tasks = await response.json();
+            const tbody = document.getElementById('taskListBody');
+            tbody.innerHTML = '';
+
+            tasks.forEach(task => {
+                const priorityClass = task.priority === 'High' ? 'bg-danger' : (task.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-info text-dark');
+                const statusClass = task.status === 'Completed' ? 'bg-success' : 'bg-secondary';
+                
+                const safeTitle = escapeHTML(task.title);
+                const safeDesc = task.description ? escapeHTML(task.description) : '<span class="text-muted fst-italic">No description</span>';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-bold">${safeTitle}</td>
+                    <td>${safeDesc}</td>
+                    <td><span class="badge ${priorityClass}">${task.priority}</span></td>
+                    <td><span class="badge ${statusClass}">${task.status}</span></td>
+                    <td>
+                        ${task.status === 'Pending' ? `<button onclick="updateTaskStatus(${task.id}, 'Completed')" class="btn btn-sm btn-outline-success me-1">Complete</button>` : `<button onclick="updateTaskStatus(${task.id}, 'Pending')" class="btn btn-sm btn-outline-secondary me-1">Revert</button>`}
+                        <button onclick="deleteTask(${task.id})" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error("Failed to load tasks:", error);
+        }
+    }
+
+    async function loadAnalytics() {
+        try {
+            const response = await fetch('/api/analytics/');
+            const data = await response.json();
+            document.getElementById('totalTasks').textContent = data.total_tasks;
+            document.getElementById('completedTasks').textContent = data.completed_tasks;
+            document.getElementById('pendingTasks').textContent = data.pending_tasks;
+            document.getElementById('completionPercentage').textContent = `${data.completion_percentage}%`;
+        } catch (error) {
+            console.error("Failed to load analytics:", error);
+        }
+    }
+
+    async function updateTaskStatus(taskId, status) {
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (response.ok) {
+                // WebSocket handles UI refresh automatically
+            }
+        } catch (error) {
+            console.error("Failed to update status:", error);
+        }
+    }
+
+    async function deleteTask(taskId) {
+        if (!confirm("Are you sure you want to delete this task?")) return;
+        try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                // WebSocket handles UI refresh automatically
+            }
+        } catch (error) {
+            console.error("Failed to delete task:", error);
+        }
+    }
+</script>
+{% endblock %}
