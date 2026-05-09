@@ -84,7 +84,7 @@ Follow these steps to get a local copy up and running.
 2. Create a virtual environment:
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   source venv\Scripts\activate   
    ```
 3. Install dependencies:
    ```bash
