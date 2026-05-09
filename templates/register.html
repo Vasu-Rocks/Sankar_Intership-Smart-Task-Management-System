@@ -1,28 +1,36 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6 col-lg-5">
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white text-center">
-                <h4>Register</h4>
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0">Create Your Account</h4>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form method="POST" action="{{ url_for('auth.register') }}">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <label for="full_name" class="form-label fw-semibold">Full Name</label>
+                        <input type="text" class="form-control" id="full_name" name="full_name" placeholder="e.g. Vasu Goyal" required>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label for="email" class="form-label fw-semibold">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="e.g. vasu@example.com" required>
                     </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Create Account</button>
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Choose a unique username" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a strong password" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
                     </div>
                 </form>
             </div>
-            <div class="card-footer text-center">
+            <div class="card-footer text-center py-3">
                 <small>Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a>.</small>
             </div>
         </div>

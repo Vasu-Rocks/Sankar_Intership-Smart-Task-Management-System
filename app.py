@@ -49,7 +49,7 @@ def dashboard():
         flash('Please log in to access the dashboard.', 'warning')
         return redirect(url_for('auth.login'))
     
-    return render_template('dashboard.html', username=session['username'])
+    return render_template('dashboard.html', username=session['username'], full_name=session['full_name'], email=session['email'])
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
