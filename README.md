@@ -4,7 +4,7 @@
   <h3 align="center">Smart Task Management System</h3>
 
   <p align="center">
-    A full-stack, real-time task management web application built for the Sonkor Group Python Development Internship Assignment.
+    A full-stack, real-time task management web application built for the Sankar Group Python Development Internship Assignment.
     <br />
     <a href="#"><strong>Explore the repository »</strong></a>
     <br />
