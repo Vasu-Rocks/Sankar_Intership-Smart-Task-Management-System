@@ -112,3 +112,52 @@ Follow these steps to get a local copy up and running.
 3. Register a new user account, log in, and experience the real-time SPA dashboard!
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- WORKFLOW -->
+## System Workflow
+
+The diagram below shows how the two frontend modules (Login Page and Task Manager Dashboard) communicate with the Flask backend and PostgreSQL database through HTTP requests and WebSocket events.
+
+```mermaid
+sequenceDiagram
+    participant LP as Login Page
+    participant DB as Task Manager Dashboard
+    participant Flask as Flask Backend
+    participant PG as PostgreSQL
+
+    Note over LP,PG: LOGIN FLOW
+    LP->>Flask: POST /register (username, password)
+    Flask->>PG: INSERT INTO users
+    Flask-->>LP: Redirect to login
+
+    LP->>Flask: POST /login (username, password)
+    Flask->>PG: SELECT user WHERE username
+    Flask-->>LP: Set session cookie, Redirect to dashboard
+
+    Note over DB,PG: TASK MANAGER FLOW
+    DB->>Flask: GET /api/tasks/
+    Flask->>PG: SELECT tasks WHERE user_id
+    Flask-->>DB: JSON array of tasks
+
+    DB->>Flask: POST /api/tasks/ (title, description, priority)
+    Flask->>PG: INSERT INTO tasks
+    Flask-->>DB: 201 Created + task id
+    Flask-->>DB: WebSocket emit task_updated
+
+    DB->>Flask: PUT /api/tasks/id (status or priority)
+    Flask->>PG: UPDATE tasks WHERE id AND user_id
+    Flask-->>DB: 200 OK
+    Flask-->>DB: WebSocket emit task_updated
+
+    DB->>Flask: DELETE /api/tasks/id
+    Flask->>PG: DELETE FROM tasks WHERE id AND user_id
+    Flask-->>DB: 200 OK
+    Flask-->>DB: WebSocket emit task_updated
+
+    DB->>Flask: GET /api/analytics/
+    Flask->>PG: SELECT status FROM tasks WHERE user_id
+    Flask->>Flask: Pandas and NumPy calculate metrics
+    Flask-->>DB: JSON total, completed, pending, percentage
+```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
